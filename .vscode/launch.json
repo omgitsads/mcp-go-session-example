@@ -13,43 +13,6 @@
                 "MCP_HOST": "localhost",
                 "MCP_PORT": "8080"
             },
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "Debug MCP Server (Custom Config)",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}/cmd",
-            "args": ["server", "--host", "0.0.0.0", "--port", "9000"],
-            "env": {
-                "REDIS_ADDR": "localhost:6379",
-                "REDIS_PASSWORD": "",
-                "REDIS_DB": "0",
-                "REDIS_PREFIX": "mcp:session:",
-                "REDIS_TTL": "1h"
-            },
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "Debug MCP Server (Production-like)",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}/cmd",
-            "args": ["server"],
-            "env": {
-                "MCP_HOST": "0.0.0.0",
-                "MCP_PORT": "8080",
-                "REDIS_ADDR": "localhost:6379",
-                "REDIS_PASSWORD": "mypassword",
-                "REDIS_DB": "1",
-                "REDIS_PREFIX": "myapp:mcp:",
-                "REDIS_TTL": "2h"
-            },
-            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         }
     ]

@@ -81,9 +81,6 @@ func NewRedisSessionStore(config RedisSessionStoreConfig) (*RedisSessionStore, e
 // sessionData represents the serializable data for a session
 type sessionData struct {
 	SessionID string `json:"session_id"`
-	// Note: StreamableServerTransport contains channels and mutexes that can't be serialized
-	// In a real implementation, you'd need to serialize only the necessary state
-	// For this example, we'll store minimal data and recreate the transport
 }
 
 // Exists checks if a session exists in Redis
@@ -138,9 +135,12 @@ func (r *RedisSessionStore) Get(ctx context.Context, sessionID string) (*mcp.Str
 		return nil, fmt.Errorf("MCP server reference is nil - this should not happen")
 	}
 
-	if _, err := r.server.Connect(ctx, transport); err != nil {
+	serverSession, err := r.server.Connect(ctx, transport)
+	if err != nil {
 		return nil, fmt.Errorf("failed to connect session to server: %w", err)
 	}
+
+	serverSession.Initialize(ctx, &mcp.InitializeParams{})
 
 	// Store the transport in the active sessions map
 	r.activeSessionMu.Lock()

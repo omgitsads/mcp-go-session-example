@@ -2,6 +2,9 @@
 
 This project demonstrates how to build a Model Context Protocol (MCP) server using the [modelcontextprotocol/go-sdk](https://github.com/modelcontextprotocol/go-sdk) with session storage capabilities from the `sessions` branch in the [omgitsads/go-sdk](https://github.com/omgitsads/go-sdk) fork.
 
+> ![IMPORTANT]
+> This was mostly done with Claude Code to speed things up and probably shouldn't be used anywhere near production.
+
 ## Overview
 
 The main objective of this project is to showcase the enhanced session management features that allow for:
@@ -9,13 +12,6 @@ The main objective of this project is to showcase the enhanced session managemen
 - **Custom Session Storage**: Implement your own session storage backend (e.g., Redis, PostgreSQL, etc.)
 - **Multi-Instance Deployment**: Run multiple MCP server instances that share session state
 - **Persistent Sessions**: Sessions can survive server restarts and be shared across instances
-
-## Features
-
-- **HTTP Transport**: Uses streamable HTTP transport for MCP protocol communication
-- **Hello World Tool**: A simple example tool that demonstrates MCP tool execution
-- **Cobra CLI**: Clean command-line interface for server management
-- **Session Storage Interface**: Ready for custom session storage implementations
 
 ## Architecture
 
