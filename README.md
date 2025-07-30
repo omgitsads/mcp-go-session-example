@@ -21,15 +21,15 @@ The main objective of this project is to showcase the enhanced session managemen
 
 ```
 cmd/
-├── main.go          # CLI entry point
-├── root.go          # Root Cobra command
-└── server.go        # Server subcommand
-
-http/
-└── server.go        # HTTP server (delegates to MCP handler)
+├── main.go            # CLI entry point
+├── root.go            # Root Cobra command
+└── server.go          # Server subcommand
 
 mcp/
-└── server.go        # MCP server implementation with tools
+└── session_server.go  # MCP server implementation with tools
+
+storage/
+└── redis.go           # Redis session storage implementation
 ```
 
 ## Quick Start
