@@ -83,24 +83,6 @@ type sessionData struct {
 	SessionID string `json:"session_id"`
 }
 
-// Exists checks if a session exists in Redis
-func (r *RedisSessionStore) Exists(sessionID string) (bool, error) {
-	// Check active sessions first
-	if _, ok := r.activeSessions[sessionID]; ok {
-		return true, nil
-	}
-
-	ctx := context.Background()
-	key := r.getKey(sessionID)
-
-	exists, err := r.client.Exists(ctx, key).Result()
-	if err != nil {
-		return false, fmt.Errorf("failed to check session existence: %w", err)
-	}
-
-	return exists > 0, nil
-}
-
 // Get retrieves a session from Redis
 func (r *RedisSessionStore) Get(ctx context.Context, sessionID string) (*mcp.StreamableServerTransport, error) {
 	log.Printf("Get called for sessionID: %s, server pointer: %p", sessionID, r.server)
@@ -143,7 +125,10 @@ func (r *RedisSessionStore) Get(ctx context.Context, sessionID string) (*mcp.Str
 	// Re-initialize the session.
 	// Ideally we'll persist the client info as well from the actual initialize call, and re-hydrate it here.
 	// For now, we'll just leave it empty.
-	serverSession.Initialize(ctx, &mcp.InitializeParams{})
+	_, err = serverSession.Initialize(ctx, &mcp.InitializeParams{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize server session: %w", err)
+	}
 
 	// Store the transport in the active sessions map
 	r.activeSessionMu.Lock()
