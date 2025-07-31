@@ -2,7 +2,7 @@
 
 This project demonstrates how to build a Model Context Protocol (MCP) server using the [modelcontextprotocol/go-sdk](https://github.com/modelcontextprotocol/go-sdk) with session storage capabilities from the `sessions` branch in the [omgitsads/go-sdk](https://github.com/omgitsads/go-sdk) fork.
 
-> ![IMPORTANT]
+> [!WARNING]
 > This was mostly vibe coded with Claude Code to speed things up and probably shouldn't be used anywhere near production.
 
 ## Overview
