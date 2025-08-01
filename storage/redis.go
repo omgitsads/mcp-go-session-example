@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -63,8 +62,6 @@ func NewRedisSessionStore(config RedisSessionStoreConfig) (*RedisSessionStore, e
 		return nil, fmt.Errorf("MCP server reference is required")
 	}
 
-	log.Printf("Creating RedisSessionStore with server: %p", config.Server)
-
 	store := &RedisSessionStore{
 		client:         *client,
 		prefix:         config.Prefix,
@@ -72,8 +69,6 @@ func NewRedisSessionStore(config RedisSessionStoreConfig) (*RedisSessionStore, e
 		server:         config.Server,
 		activeSessions: make(map[string]*mcp.StreamableServerTransport),
 	}
-
-	log.Printf("RedisSessionStore created with server: %p", store.server)
 
 	return store, nil
 }
@@ -85,8 +80,6 @@ type sessionData struct {
 
 // Get retrieves a session from Redis
 func (r *RedisSessionStore) Get(ctx context.Context, sessionID string) (*mcp.StreamableServerTransport, error) {
-	log.Printf("Get called for sessionID: %s, server pointer: %p", sessionID, r.server)
-
 	// Check active sessions first
 	r.activeSessionMu.RLock()
 	if transport, ok := r.activeSessions[sessionID]; ok {
