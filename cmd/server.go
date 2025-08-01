@@ -103,7 +103,7 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	// Configure Redis session storage
 	log.Printf("Configuring Redis session storage at %s", cfg.RedisAddr)
-	redisStore, err := storage.NewRedisSessionStore(storage.RedisSessionStoreConfig{
+	redisStore, err := storage.NewRedisSessionStore[*mcp.StreamableServerTransport](storage.RedisSessionStoreConfig{
 		Addr:     cfg.RedisAddr,
 		Password: cfg.RedisPassword,
 		DB:       cfg.RedisDB,

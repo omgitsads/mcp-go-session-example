@@ -18,4 +18,5 @@ require (
 )
 
 // replace github.com/modelcontextprotocol/go-sdk => ../go-sdk
-replace github.com/modelcontextprotocol/go-sdk => github.com/omgitsads/go-sdk v0.0.0-20250731090223-ccbedcf20bab
+// replace github.com/modelcontextprotocol/go-sdk => github.com/omgitsads/go-sdk v0.0.0-20250731090223-ccbedcf20bab
+replace github.com/modelcontextprotocol/go-sdk => github.com/joshwlewis/go-sdk v0.0.0-20250731172750-95cb06c54eee
