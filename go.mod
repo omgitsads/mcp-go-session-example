@@ -17,5 +17,4 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 )
 
-// replace github.com/modelcontextprotocol/go-sdk => ../go-sdk
-replace github.com/modelcontextprotocol/go-sdk => github.com/omgitsads/go-sdk v0.0.0-20250731090223-ccbedcf20bab
+replace github.com/modelcontextprotocol/go-sdk => github.com/jba/go-sdk v0.1.1-0.20250804200209-c6facb547b00

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"sync"
 	"time"
 
@@ -16,10 +17,12 @@ type RedisSessionStore struct {
 	client          redis.Client
 	prefix          string
 	ttl             time.Duration
-	server          *mcp.Server                               // Reference to the MCP server for connecting sessions
-	activeSessions  map[string]*mcp.StreamableServerTransport // Active sessions by ID
+	server          *mcp.Server                  // Reference to the MCP server for connecting sessions
+	activeSessions  map[string]*mcp.SessionState // Active sessions by ID
 	activeSessionMu sync.RWMutex
 }
+
+var _ mcp.SessionStore = (*RedisSessionStore)(nil)
 
 // RedisSessionStoreConfig holds configuration for the Redis session store
 type RedisSessionStoreConfig struct {
@@ -67,24 +70,18 @@ func NewRedisSessionStore(config RedisSessionStoreConfig) (*RedisSessionStore, e
 		prefix:         config.Prefix,
 		ttl:            config.TTL,
 		server:         config.Server,
-		activeSessions: make(map[string]*mcp.StreamableServerTransport),
+		activeSessions: make(map[string]*mcp.SessionState),
 	}
 
 	return store, nil
 }
 
-// sessionData represents the serializable data for a session
-type sessionData struct {
-	SessionID string `json:"session_id"`
-}
-
 // Get retrieves a session from Redis
-func (r *RedisSessionStore) Get(ctx context.Context, sessionID string) (*mcp.StreamableServerTransport, error) {
-	// Check active sessions first
+func (r *RedisSessionStore) Load(ctx context.Context, sessionID string) (*mcp.SessionState, error) {
 	r.activeSessionMu.RLock()
-	if transport, ok := r.activeSessions[sessionID]; ok {
+	if session, ok := r.activeSessions[sessionID]; ok {
 		r.activeSessionMu.RUnlock()
-		return transport, nil
+		return session, nil
 	}
 	r.activeSessionMu.RUnlock()
 
@@ -93,58 +90,28 @@ func (r *RedisSessionStore) Get(ctx context.Context, sessionID string) (*mcp.Str
 	data, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, nil // Session not found
+			return nil, fs.ErrNotExist // Session not found
 		}
 		return nil, fmt.Errorf("failed to get session from Redis: %w", err)
 	}
 
-	var sessionData sessionData
-	if err := json.Unmarshal([]byte(data), &sessionData); err != nil {
+	var sessionState mcp.SessionState
+	if err := json.Unmarshal([]byte(data), &sessionState); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session data: %w", err)
 	}
 
-	transport := mcp.NewStreamableServerTransport(sessionData.SessionID, nil)
-
-	// Connect the transport to the MCP server
-	if r.server == nil {
-		return nil, fmt.Errorf("MCP server reference is nil - this should not happen")
-	}
-
-	serverSession, err := r.server.Connect(ctx, transport)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect session to server: %w", err)
-	}
-
-	// Re-initialize the session.
-	// Ideally we'll persist the client info as well from the actual initialize call, and re-hydrate it here.
-	// For now, we'll just leave it empty.
-	_, err = serverSession.Initialize(ctx, &mcp.InitializeParams{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize server session: %w", err)
-	}
-
-	// Store the transport in the active sessions map
 	r.activeSessionMu.Lock()
 	defer r.activeSessionMu.Unlock()
-	r.activeSessions[sessionID] = transport
+	r.activeSessions[sessionID] = &sessionState
 
-	return transport, nil
+	return &sessionState, nil
 }
 
 // Set stores a session in Redis
-func (r *RedisSessionStore) Set(sessionID string, session *mcp.StreamableServerTransport) error {
-	ctx := context.Background()
+func (r *RedisSessionStore) Store(ctx context.Context, sessionID string, sessionState *mcp.SessionState) error {
 	key := r.getKey(sessionID)
 
-	// NOTE: This is a simplified serialization. In a real implementation,
-	// you would need to serialize the actual session state properly.
-	// The StreamableServerTransport might need additional methods to support
-	// serialization, or you might need to store only the essential state.
-	sessionData := sessionData{
-		SessionID: sessionID,
-	}
-
-	data, err := json.Marshal(sessionData)
+	data, err := json.Marshal(sessionState)
 	if err != nil {
 		return fmt.Errorf("failed to marshal session data: %w", err)
 	}
@@ -156,14 +123,13 @@ func (r *RedisSessionStore) Set(sessionID string, session *mcp.StreamableServerT
 	// Store the transport in the active sessions map
 	r.activeSessionMu.Lock()
 	defer r.activeSessionMu.Unlock()
-	r.activeSessions[sessionID] = session
+	r.activeSessions[sessionID] = sessionState
 
 	return nil
 }
 
 // Delete removes a session from Redis
-func (r *RedisSessionStore) Delete(sessionID string) error {
-	ctx := context.Background()
+func (r *RedisSessionStore) Delete(ctx context.Context, sessionID string) error {
 	key := r.getKey(sessionID)
 
 	if err := r.client.Del(ctx, key).Err(); err != nil {
@@ -176,15 +142,6 @@ func (r *RedisSessionStore) Delete(sessionID string) error {
 	delete(r.activeSessions, sessionID)
 
 	return nil
-}
-
-// Range iterates over all active sessions
-func (r *RedisSessionStore) Range(f func(sessionID string, session *mcp.StreamableServerTransport)) {
-	r.activeSessionMu.RLock()
-	defer r.activeSessionMu.RUnlock()
-	for sessionID, session := range r.activeSessions {
-		f(sessionID, session)
-	}
 }
 
 // Close closes the Redis connection
